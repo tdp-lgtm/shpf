@@ -8,19 +8,13 @@
   @param {boolean} [unset_image_tag] - if true, ignores the image focal point
   @param {string} [style] - additional styles
   @param {string} [alt_text_fallback] - Optional text to display if image alt text is blank
+  @param {string} [sizes] - Optional sizes attribute; when provided, a width-based srcset is generated instead of the density-based one
 
   @example
   {% render 'image', image: product.featured_image, height: 300, class: 'product-image' %}
 {%- enddoc -%}
 {% if image != blank %}
-  {% assign image_height = height | default: image.height %}
-  {% assign image_height_2x = height | default: image_height | times: 2 %}
-  {% assign image_height_3x = height | default: image_height | times: 3 %}
   {% assign image_alt_text = image.alt | default: alt_text_fallback | default: '' %}
-
-  {% capture image_srcset -%}
-    {{ image | image_url: height: image_height }} 1x, {{ image | image_url: height: image_height_2x }} 2x, {{ image | image_url: height: image_height_3x }} 3x
-  {%- endcapture %}
 
   {% assign style_value = style | default: '' %}
 
@@ -28,11 +22,41 @@
     {% assign style_value = style_value | append: 'object-position: inherit;' %}
   {% endif %}
 
-  {{
-    image
-    | image_url: height: image_height
-    | image_tag: class: class, srcset: image_srcset, style: style_value, alt: image_alt_text
-  }}
+  {% if sizes != blank %}
+    {{
+      image
+      | image_url: width: 3000
+      | image_tag:
+        class: class,
+        widths: '352, 528, 750, 1100, 1500, 2200, 3000',
+        sizes: sizes,
+        style: style_value,
+        alt: image_alt_text
+    }}
+  {% else %}
+    {% comment %}
+      When no explicit height is given, cap the base height: deriving it from the
+      intrinsic upload size produces multi-megabyte downloads for large uploads
+      (the 2x/3x srcset entries multiply the base height).
+    {% endcomment %}
+    {% if height %}
+      {% assign image_height = height %}
+    {% else %}
+      {% assign image_height = image.height | at_most: 1100 %}
+    {% endif %}
+    {% assign image_height_2x = image_height | times: 2 %}
+    {% assign image_height_3x = image_height | times: 3 %}
+
+    {% capture image_srcset -%}
+      {{ image | image_url: height: image_height }} 1x, {{ image | image_url: height: image_height_2x }} 2x, {{ image | image_url: height: image_height_3x }} 3x
+    {%- endcapture %}
+
+    {{
+      image
+      | image_url: height: image_height
+      | image_tag: class: class, srcset: image_srcset, style: style_value, alt: image_alt_text
+    }}
+  {% endif %}
 {% elsif text_fallback %}
   {{ text_fallback }}
 {% endif %}
