@@ -14,7 +14,31 @@
       >
     {%- endif -%}
 
-    <script src="https://cdn-widgetsrepository.yotpo.com/v1/loader/A2okBz5JFB0Aco0tAWSbtrrpjjvvluzVgVDTcgwn" async></script>
+    <script>
+      // Defer the Yotpo widgets loader so reviews don't compete with the initial
+      // render: load on first user interaction, or shortly after the load event.
+      (function () {
+        var loaded = false;
+        function loadYotpo() {
+          if (loaded) return;
+          loaded = true;
+          var script = document.createElement('script');
+          script.src = 'https://cdn-widgetsrepository.yotpo.com/v1/loader/A2okBz5JFB0Aco0tAWSbtrrpjjvvluzVgVDTcgwn';
+          script.async = true;
+          document.head.appendChild(script);
+        }
+        ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(function (event) {
+          window.addEventListener(event, loadYotpo, { once: true, passive: true });
+        });
+        if (document.readyState === 'complete') {
+          setTimeout(loadYotpo, 1500);
+        } else {
+          window.addEventListener('load', function () {
+            setTimeout(loadYotpo, 1500);
+          });
+        }
+      })();
+    </script>
 
     {% # theme-check-disable RemoteAsset %}
     {% comment %} This a way to wait for main content to load when navigating to a new page so that the view transitions can work consistently {% endcomment %}
