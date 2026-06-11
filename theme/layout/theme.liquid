@@ -15,8 +15,9 @@
     {%- endif -%}
 
     <script>
-      // Defer the Yotpo widgets loader so reviews don't compete with the initial
-      // render: load on first user interaction, or shortly after the load event.
+      // Load the Yotpo widgets loader only on first user interaction so reviews
+      // never compete with the initial render. The Yotpo app embed must stay
+      // disabled, otherwise it injects its own copy of this loader at page load.
       (function () {
         var loaded = false;
         function loadYotpo() {
@@ -27,16 +28,9 @@
           script.async = true;
           document.head.appendChild(script);
         }
-        ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(function (event) {
+        ['pointerdown', 'touchstart', 'keydown', 'scroll', 'wheel'].forEach(function (event) {
           window.addEventListener(event, loadYotpo, { once: true, passive: true });
         });
-        if (document.readyState === 'complete') {
-          setTimeout(loadYotpo, 1500);
-        } else {
-          window.addEventListener('load', function () {
-            setTimeout(loadYotpo, 1500);
-          });
-        }
       })();
     </script>
 
